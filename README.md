@@ -1,10 +1,9 @@
-# Cat-See-World
-
 Advanced situational awareness dashboard for monitoring live global events in one place.
 
 Track real-time conflicts, cyber threats, seismic activity, market signals, intelligence feeds, strategic predictions, and more — all overlaid on an interactive world map.
 
 <img width="3570" height="1808" alt="front" src="https://github.com/user-attachments/assets/1a4f5cc9-2414-4fa5-ac19-1b7cf82909bd" />
+
 
 ## What It Does
 
@@ -30,15 +29,13 @@ Designed for quick scanning — no more tab-juggling during fast-moving events.
 ## How to Use It
 
 ### Quick Start 
+<img width="701" height="364" alt="image" src="https://github.com/user-attachments/assets/be8e7ff9-de90-45af-a26f-4093eb3da590" />
 
-1. Visit the live demo:  
-   https://moonianp.github.io/Cat-See-World/  
-
-2. Open the dashboard in your browser.
-3. Zoom/pan the map to your region of interest.
-4. Toggle layers on the sidebar (e.g., "Conflict Zones", "Cyber Threats", "Seismic").
-5. Click markers for details, intel summaries, or linked sources.
-6. Use the timeline or search to filter events.
+1. Open the dashboard in your browser.
+2. Zoom/pan the map to your region of interest.
+3. Toggle layers on the sidebar (e.g., "Conflict Zones", "Cyber Threats", "Seismic").
+4. Click markers for details, intel summaries, or linked sources.
+5. Use the timeline or search to filter events.
 
 ### Running Locally
 1. Clone the repo:
