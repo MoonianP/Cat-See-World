@@ -29,7 +29,7 @@ Designed for quick scanning — no more tab-juggling during fast-moving events.
 
 ## How to Use It
 
-### Quick Start (if it's a hosted web app)
+### Quick Start 
 
 1. Visit the live demo:  
    https://moonianp.github.io/Cat-See-World/  
@@ -40,8 +40,7 @@ Designed for quick scanning — no more tab-juggling during fast-moving events.
 5. Click markers for details, intel summaries, or linked sources.
 6. Use the timeline or search to filter events.
 
-### Running Locally (if it's open-source code)
-
+### Running Locally
 1. Clone the repo:
    ```bash
    git clone https://github.com/MoonianP/Cat-See-World.git
