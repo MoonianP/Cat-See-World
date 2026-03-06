@@ -24,21 +24,31 @@ Designed for quick scanning — no more tab-juggling during fast-moving events.
 - Custom alerts and filters
 - Dark-mode UI optimized for long monitoring sessions
 
-(If you have specific tech stack or current features like "built with Leaflet + React", add them here!)
+## Tech Stack
 
-## How to Use It
+  Frontend  →  Vanilla HTML/JS, D3.js (Natural Earth projection), TopoJSON
+  
+  Backend   →  Node.js + Express
+  
+  Data      →  Live RSS aggregation, USGS Earthquake API, Yahoo Finance,
+               Open-Meteo weather, CISA advisories
+               
+  Map       →  D3 geoNaturalEarth1 with zoom/pan, layered SVG markers,
+               per-event detail panels with location photography
 
-### Quick Start 
+
+## Quick Start
+
 <img width="701" height="364" alt="image" src="https://github.com/user-attachments/assets/be8e7ff9-de90-45af-a26f-4093eb3da590" />
 
-1. Open the dashboard in your browser.
-2. Zoom/pan the map to your region of interest.
-3. Toggle layers on the sidebar (e.g., "Conflict Zones", "Cyber Threats", "Seismic").
-4. Click markers for details, intel summaries, or linked sources.
-5. Use the timeline or search to filter events.
+  git clone https://github.com/MoonianP/Cat-See-World.git
+  
+  cd Cat-See-World
+  
+  npm install
+  
+  node server.js
+  
+  Open http://localhost:3000
 
-### Running Locally
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/MoonianP/Cat-See-World.git
-   cd Cat-See-World
+  Or just run: ./start.sh
