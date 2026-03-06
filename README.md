@@ -32,8 +32,7 @@ Designed for quick scanning — no more tab-juggling during fast-moving events.
 ### Quick Start (if it's a hosted web app)
 
 1. Visit the live demo:  
-   https://moon ianp.github.io/Cat-See-World/  
-   (or wherever you host it — update this link!)
+   https://moonianp.github.io/Cat-See-World/  
 
 2. Open the dashboard in your browser.
 3. Zoom/pan the map to your region of interest.
