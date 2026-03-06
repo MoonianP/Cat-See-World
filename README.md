@@ -1,38 +1,49 @@
-# 🌍 Cat-See-World
+# Cat-See-World
 
-**Global Intelligence Platform** — a real-time news & situational awareness dashboard.
+Advanced situational awareness dashboard for monitoring live global events in one place.
 
-## Quick Start
+Track real-time conflicts, cyber threats, seismic activity, market signals, intelligence feeds, strategic predictions, and more — all overlaid on an interactive world map.
 
-```bash
-cd cat-see-world
-npm install      # only needed once
-npm start        # or: node server.js
-```
+<image-card alt="Dashboard" src="https://github.com/MoonianP/Cat-See-World/raw/main/front.png" ></image-card>
 
-Then open **http://localhost:3000** in your browser.
+## What It Does
 
-## What's Live
+Cat-See-World aggregates and visualizes high-signal open-source intelligence (OSINT) and live feeds:
+- Geopolitical conflicts and military movements
+- Cyber attacks and infrastructure alerts
+- Earthquakes, natural disasters, and seismic data
+- Financial/market volatility indicators
+- Intel summaries, news streams, and predictive insights
 
-| Endpoint | Data Source | Refresh |
-|---|---|---|
-| `/api/news` | BBC, DW, Al Jazeera, Reuters RSS | 5 min |
-| `/api/earthquakes` | USGS M4.5+ feed | 5 min |
-| `/api/markets` | Yahoo Finance | 1 min |
-| `/api/weather` | Open-Meteo | 15 min |
-| `/api/wildfires` | Static (curated) | — |
+Designed for quick scanning — no more tab-juggling during fast-moving events.
 
-## Features
+## Features (Current & Planned)
 
-- ✅ Category nav filter (All / Conflict / Cyber / etc.)
-- ✅ Search bar (filters headline, summary, source, category)
-- ✅ Story modal popup (click any card or hero story)
-- ✅ Load More button
-- ✅ Market refresh button
-- ✅ Alert panel (save/delete keyword alerts)
-- ✅ Dark mode toggle
-- ✅ Auto-refresh every 5 minutes with alert matching
+- Interactive global map with layered overlays (conflict zones, military bases, nuclear sites, etc.)
+- Real-time event markers and timelines
+- Live news/intel feeds integration
+- Custom alerts and filters
+- Dark-mode UI optimized for long monitoring sessions
 
-## Port
+(If you have specific tech stack or current features like "built with Leaflet + React", add them here!)
 
-Default: **3000**. Change with `PORT=8080 node server.js`.
+## How to Use It
+
+### Quick Start (if it's a hosted web app)
+
+1. Visit the live demo:  
+   https://moon ianp.github.io/Cat-See-World/  
+   (or wherever you host it — update this link!)
+
+2. Open the dashboard in your browser.
+3. Zoom/pan the map to your region of interest.
+4. Toggle layers on the sidebar (e.g., "Conflict Zones", "Cyber Threats", "Seismic").
+5. Click markers for details, intel summaries, or linked sources.
+6. Use the timeline or search to filter events.
+
+### Running Locally (if it's open-source code)
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/MoonianP/Cat-See-World.git
+   cd Cat-See-World
