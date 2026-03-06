@@ -4,7 +4,7 @@ Advanced situational awareness dashboard for monitoring live global events in on
 
 Track real-time conflicts, cyber threats, seismic activity, market signals, intelligence feeds, strategic predictions, and more — all overlaid on an interactive world map.
 
-<image-card alt="Dashboard" src="https://github.com/MoonianP/Cat-See-World/raw/main/front.png" ></image-card>
+<image-card alt="Cat-See-World Dashboard Screenshot" src="front.png" ></image-card>
 
 ## What It Does
 
