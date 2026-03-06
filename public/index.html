@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CAT-SEE-WORLD · Global Intelligence Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+
+<style>
+:root{
+  --bg:#06090d;--bg2:#0b0f15;--bg3:#10161e;--bg4:#151d28;--bg5:#1a2534;
+  --border:#1a2535;--border2:#22334a;--border3:#2a4060;
+  --text:#b8cfe0;--text2:#6a8fa8;--text3:#384f63;
+  --accent:#e83535;--accent2:#ff4444;
+  --green:#00d46a;--green2:#00ff80;
+  --blue:#1a8cff;--blue2:#5ab4ff;
+  --orange:#ff8c00;--orange2:#ffb74d;
+  --yellow:#ffc800;--yellow2:#ffe066;
+  --cyan:#00c8d4;--cyan2:#4de8f0;
+  --purple:#8b5cf6;--purple2:#c4b5fd;
+  --mono:'Share Tech Mono',monospace;
+  --sans:'Rajdhani',sans-serif;
+  --display:'Oswald',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:var(--mono);background:var(--bg);color:var(--text);font-size:12px;overflow:hidden;}
+a{color:inherit;text-decoration:none;}
+button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border3);border-radius:2px;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 1px,rgba(0,0,0,.04) 1px,rgba(0,0,0,.04) 2px);pointer-events:none;z-index:9998;}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.4) 100%);pointer-events:none;z-index:9997;}
+
+/* ── TOP BAR ─────────────────────────────────── */
+#topBar{height:34px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;flex-shrink:0;position:relative;z-index:200;}
+.tb-brand{display:flex;align-items:center;gap:8px;padding:0 14px;border-right:1px solid var(--border);height:100%;flex-shrink:0;}
+.tb-logo{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:.1em;color:#fff;}
+.tb-logo em{color:var(--accent);font-style:normal;}
+.tb-ver{font-size:9px;color:var(--text3);margin-left:2px;border:1px solid var(--border2);padding:1px 4px;border-radius:2px;}
+.tb-seg{display:flex;align-items:center;gap:6px;padding:0 12px;border-right:1px solid var(--border);height:100%;flex-shrink:0;font-size:10px;}
+.tb-live{color:var(--green);letter-spacing:.12em;}
+.blink-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 1.3s ease-in-out infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.tb-time{color:var(--cyan2);letter-spacing:.05em;font-size:10px;min-width:195px;}
+.defcon-wrap{display:flex;align-items:center;gap:7px;}
+.defcon-label{font-size:8px;letter-spacing:.14em;color:var(--text3);}
+.defcon-pips{display:flex;gap:3px;}
+.dp{width:11px;height:11px;border-radius:2px;border:1px solid var(--border2);opacity:.2;}
+.dp.on{opacity:1;}
+.dp-5{background:#00cc44;border-color:#00cc44;}.dp.on.dp-5{box-shadow:0 0 6px #00cc44;}
+.dp-4{background:#1a8cff;border-color:#1a8cff;}.dp.on.dp-4{box-shadow:0 0 6px #1a8cff;}
+.dp-3{background:#ffc800;border-color:#ffc800;}
+.dp-2{background:#ff6600;border-color:#ff6600;}
+.dp-1{background:#ff0000;border-color:#ff0000;}
+.defcon-val{font-size:9px;letter-spacing:.06em;color:var(--blue2);}
+.tb-metrics{display:flex;margin-left:auto;}
+.tb-metric{padding:0 11px;border-left:1px solid var(--border);height:34px;display:flex;flex-direction:column;justify-content:center;gap:1px;cursor:default;}
+.tb-metric-lbl{font-size:7px;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;}
+.tb-metric-val{font-size:11px;letter-spacing:.04em;}
+.c-red{color:var(--accent);}.c-grn{color:var(--green);}.c-org{color:var(--orange);}.c-yel{color:var(--yellow);}.c-blu{color:var(--blue2);}.c-cyn{color:var(--cyan2);}
+.tb-actions{display:flex;height:100%;border-left:1px solid var(--border);}
+.tb-btn{height:34px;padding:0 12px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);border-right:1px solid var(--border);display:flex;align-items:center;gap:5px;transition:all .15s;}
+.tb-btn:hover{color:var(--text);background:var(--bg3);}
+.tb-btn.active{color:var(--accent);background:rgba(232,53,53,.06);}
+
+/* ── TICKER ──────────────────────────────────── */
+#ticker{height:22px;background:rgba(232,53,53,.06);border-bottom:1px solid rgba(232,53,53,.15);display:flex;align-items:center;overflow:hidden;flex-shrink:0;}
+.tk-tag{background:var(--accent);color:#fff;font-family:var(--display);font-size:9px;font-weight:600;letter-spacing:.14em;padding:0 12px;height:100%;display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.tk-live-dot{width:5px;height:5px;border-radius:50%;background:#fff;animation:blink 1.3s ease-in-out infinite;}
+.tk-scroll{overflow:hidden;flex:1;height:100%;}
+.tk-inner{display:flex;animation:tkScroll 100s linear infinite;white-space:nowrap;height:100%;align-items:center;}
+.tk-item{padding:0 32px 0 0;font-size:9px;color:rgba(184,207,224,.6);letter-spacing:.04em;display:inline-flex;align-items:center;gap:8px;}
+.tk-sep{color:var(--accent);font-size:10px;}
+@keyframes tkScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ── LAYOUT ──────────────────────────────────── */
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+#mid{display:flex;flex:1;min-height:0;}
+
+/* ── LEFT PANEL ──────────────────────────────── */
+#leftPanel{width:196px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+.lp-hd{padding:5px 10px;font-size:7px;letter-spacing:.18em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.lp-hd-tag{font-size:7px;border:1px solid var(--border2);padding:1px 5px;border-radius:2px;color:var(--text3);}
+.lp-scroll{overflow-y:auto;flex:1;}
+.lyr{display:flex;align-items:center;gap:7px;padding:5px 10px;cursor:pointer;border-bottom:1px solid rgba(26,37,53,.7);transition:background .12s;user-select:none;}
+.lyr:hover{background:var(--bg3);}
+.lyr.on .lyr-check{background:var(--blue);border-color:var(--blue);color:#fff;}
+.lyr.on .lyr-lbl{color:var(--text);}
+.lyr-check{width:13px;height:13px;border:1px solid var(--border2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0;transition:all .12s;color:transparent;}
+.lyr-icon{font-size:11px;width:16px;text-align:center;flex-shrink:0;}
+.lyr-lbl{font-size:10px;letter-spacing:.04em;color:var(--text2);flex:1;}
+.lyr-cnt{font-size:8px;color:var(--text3);background:var(--bg4);padding:1px 4px;border-radius:2px;border:1px solid var(--border);}
+.rm-row{display:flex;align-items:center;gap:6px;padding:4px 10px;border-bottom:1px solid rgba(26,37,53,.5);}
+.rm-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.rm-name{font-family:var(--sans);font-size:10px;font-weight:600;color:var(--text2);flex:1;}
+.rm-score{font-size:10px;font-weight:700;min-width:24px;text-align:right;}
+.rm-chg{font-size:8px;color:var(--text3);min-width:22px;text-align:right;}
+.cmi{padding:5px 10px;border-bottom:1px solid rgba(26,37,53,.5);}
+.cmi-title{font-size:9px;color:var(--text2);line-height:1.4;margin-bottom:2px;}
+.cmi-meta{font-size:7px;color:var(--text3);letter-spacing:.05em;}
+.side-pred{padding:5px 10px;border-bottom:1px solid rgba(26,37,53,.5);}
+.side-pred-q{font-family:var(--sans);font-size:9px;font-weight:600;color:var(--text2);line-height:1.3;margin-bottom:4px;}
+.side-pred-bar{display:flex;align-items:center;gap:5px;}
+.side-pred-track{flex:1;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.side-pred-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;}
+.side-pred-pct{font-size:9px;color:var(--cyan2);min-width:28px;text-align:right;}
+
+/* ── MAP AREA ────────────────────────────────── */
+#mapArea{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;position:relative;}
+#mapBar{background:var(--bg2);border-bottom:1px solid var(--border);padding:4px 12px;display:flex;align-items:center;gap:10px;flex-shrink:0;height:26px;}
+.mb-title{font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.1em;color:var(--text2);text-transform:uppercase;}
+.mb-badge{background:rgba(232,53,53,.1);border:1px solid rgba(232,53,53,.2);color:var(--accent);font-size:7px;letter-spacing:.1em;padding:1px 6px;border-radius:2px;animation:blink 2s ease-in-out infinite;}
+.mb-coords{margin-left:auto;font-size:8px;color:var(--text3);letter-spacing:.04em;font-family:var(--mono);}
+#filterStrip{background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;height:24px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+#filterStrip::-webkit-scrollbar{display:none;}
+.fs-btn{font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:0 10px;height:24px;color:var(--text3);transition:all .12s;white-space:nowrap;border-right:1px solid rgba(26,37,53,.5);}
+.fs-btn:hover{color:var(--text);background:rgba(255,255,255,.02);}
+.fs-btn.on{color:var(--accent);background:rgba(232,53,53,.07);border-bottom:2px solid var(--accent);}
+#searchBar{background:var(--bg3);border-bottom:1px solid var(--border);display:none;align-items:center;height:26px;flex-shrink:0;}
+#srchInput{flex:1;background:transparent;border:none;outline:none;padding:0 10px;font:inherit;font-size:10px;color:var(--text);letter-spacing:.04em;}
+#srchInput::placeholder{color:var(--text3);}
+#srchBtn{padding:0 10px;height:100%;font-size:8px;color:var(--text3);border-left:1px solid var(--border);letter-spacing:.1em;text-transform:uppercase;}
+#srchBtn:hover{color:var(--accent);}
+#worldMap{flex:1;min-height:0;position:relative;overflow:hidden;background:#040a12;}
+#mapSvg{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;}
+#mapSvg.dragging{cursor:grabbing;}
+/* map detail panel */
+#mapDetail{position:absolute;right:12px;top:12px;width:320px;background:rgba(8,14,24,0.97);border:1px solid #2a4060;box-shadow:0 16px 60px rgba(0,0,0,.9);z-index:80;display:none;font-family:var(--mono);}
+#mapDetail.open{display:block;animation:detailIn .2s ease;}
+@keyframes detailIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+#mdImg{width:100%;height:160px;object-fit:cover;display:block;background:#0d1a2a;}
+#mdImgPlaceholder{width:100%;height:160px;background:linear-gradient(135deg,#0d1a2a 0%,#162540 100%);display:flex;align-items:center;justify-content:center;font-size:40px;}
+#mdBody{padding:14px 16px;}
+#mdCat{font-size:7px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+#mdCatDot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+#mdName{font-family:var(--sans);font-size:16px;font-weight:700;color:#fff;line-height:1.3;margin-bottom:6px;}
+#mdDetail{font-size:10px;color:var(--text2);line-height:1.7;margin-bottom:10px;}
+#mdMeta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.md-tag{font-size:7px;letter-spacing:.1em;padding:2px 7px;border-radius:2px;border:1px solid;text-transform:uppercase;}
+#mdClose{position:absolute;top:8px;right:10px;font-size:16px;color:rgba(255,255,255,.6);cursor:pointer;z-index:5;background:rgba(0,0,0,.5);width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .15s;}
+#mdClose:hover{color:#fff;background:rgba(232,53,53,.5);}
+.map-land{fill:#0e1822;stroke:#1a2d42;stroke-width:0.4;}
+.map-graticule{fill:none;stroke:#0d1a28;stroke-width:0.3;}
+.map-border{fill:none;stroke:#0b1520;stroke-width:0.6;}
+/* city / country labels */
+.map-label{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:600;fill:#3a5a78;pointer-events:none;text-shadow:0 0 4px #04070a;letter-spacing:.04em;}
+.map-label-capital{font-size:9px;fill:#2a4560;}
+/* marker tooltip (hover preview only) */
+.csw-tip{position:absolute;pointer-events:none;background:#0a111d;border:1px solid #2a4060;padding:8px 12px;max-width:220px;font-family:var(--mono);font-size:9px;color:var(--text2);line-height:1.5;box-shadow:0 8px 40px rgba(0,0,0,.9);z-index:50;display:none;}
+.csw-tip.show{display:block;}
+.tip-cat{font-size:7px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:5px;}
+.tip-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.tip-name{font-family:var(--sans);font-size:12px;font-weight:700;color:#fff;margin-bottom:2px;line-height:1.3;}
+.tip-live{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:blink 1.3s infinite;display:inline-block;}
+
+/* ── RIGHT PANEL ─────────────────────────────── */
+#rightPanel{width:256px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
+.rp-hd{padding:5px 10px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.rp-title{font-size:7px;letter-spacing:.18em;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.rp-badge{font-size:7px;border:1px solid var(--border2);padding:1px 5px;border-radius:2px;color:var(--text3);letter-spacing:.06em;}
+.rp-live{font-size:7px;background:rgba(0,212,106,.07);border:1px solid rgba(0,212,106,.15);color:var(--green);padding:1px 5px;border-radius:2px;letter-spacing:.06em;}
+.r-risk-row{padding:5px 10px;border-bottom:1px solid rgba(26,37,53,.6);}
+.r-risk-row:last-child{border-bottom:none;}
+.r-risk-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+.r-risk-name{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;}
+.r-risk-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.r-risk-right{display:flex;align-items:center;gap:5px;}
+.r-risk-score{font-size:13px;font-weight:700;letter-spacing:.02em;font-family:var(--display);}
+.r-risk-chg{font-size:8px;color:var(--text3);}
+.r-risk-bar{height:2px;background:var(--bg4);border-radius:1px;overflow:hidden;margin-bottom:2px;}
+.r-risk-fill{height:100%;border-radius:1px;transition:width 1.2s ease;}
+.r-risk-detail{font-size:7px;color:var(--text3);letter-spacing:.04em;}
+.r-quake{padding:5px 10px;border-bottom:1px solid rgba(26,37,53,.6);display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .12s;}
+.r-quake:hover{background:var(--bg3);}
+.r-quake:last-child{border-bottom:none;}
+.r-quake-mag{font-family:var(--display);font-size:16px;font-weight:700;min-width:30px;text-align:center;}
+.r-quake-loc{font-family:var(--sans);font-size:10px;font-weight:600;color:var(--text);line-height:1.3;}
+.r-quake-meta{font-size:7px;color:var(--text3);letter-spacing:.04em;margin-top:1px;}
+.r-mkt{padding:4px 10px;border-bottom:1px solid rgba(26,37,53,.5);display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px;}
+.r-mkt:last-child{border-bottom:none;}
+.r-mkt-sym{font-family:var(--display);font-size:12px;font-weight:700;color:#fff;letter-spacing:.04em;}
+.r-mkt-name{font-size:7px;color:var(--text3);letter-spacing:.04em;}
+.r-mkt-price{font-size:11px;text-align:right;color:var(--text);}
+.r-mkt-chg{font-size:8px;text-align:right;letter-spacing:.03em;}
+.up{color:var(--green);}.dn{color:var(--accent);}
+
+/* ── BOTTOM ──────────────────────────────────── */
+#bottom{height:240px;display:flex;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg2);}
+.bp{flex:1;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.bp:last-child{border-right:none;}
+.bp-hd{padding:4px 10px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;height:24px;}
+.bp-title{font-size:7px;letter-spacing:.18em;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.bp-live{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:blink 1.3s ease-in-out infinite;}
+.bp-badge{font-size:7px;letter-spacing:.08em;padding:1px 5px;border-radius:2px;}
+.bp-body{flex:1;overflow-y:auto;}
+.intel-item{padding:6px 10px;border-bottom:1px solid rgba(26,37,53,.6);cursor:pointer;transition:background .12s;}
+.intel-item:hover{background:rgba(26,140,255,.04);}
+.intel-item:last-child{border-bottom:none;}
+.ii-row1{display:flex;align-items:center;gap:4px;margin-bottom:2px;}
+.i-cat{font-size:7px;letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border-radius:2px;}
+.i-sev{font-size:7px;letter-spacing:.06em;padding:1px 4px;border-radius:2px;}
+.i-new{font-size:7px;padding:1px 4px;border-radius:2px;background:rgba(232,53,53,.15);color:var(--accent);border:1px solid rgba(232,53,53,.25);animation:blink 2s infinite;}
+.i-time{font-size:7px;color:var(--text3);margin-left:auto;letter-spacing:.04em;}
+.i-hl{font-family:var(--sans);font-size:11px;font-weight:600;line-height:1.3;color:var(--text);}
+.i-src{font-size:7px;color:var(--text3);margin-top:1px;letter-spacing:.04em;}
+.cc-conflict{background:rgba(232,53,53,.1);color:#ff8080;border:1px solid rgba(232,53,53,.18);}
+.cc-cyber{background:rgba(26,140,255,.08);color:#5ab4ff;border:1px solid rgba(26,140,255,.18);}
+.cc-natural{background:rgba(255,140,0,.07);color:#ffb74d;border:1px solid rgba(255,140,0,.15);}
+.cc-markets{background:rgba(0,212,106,.06);color:#00d46a;border:1px solid rgba(0,212,106,.13);}
+.cc-climate{background:rgba(0,200,212,.06);color:#4de8f0;border:1px solid rgba(0,200,212,.13);}
+.cc-unrest{background:rgba(139,92,246,.08);color:#c4b5fd;border:1px solid rgba(139,92,246,.16);}
+.cc-aviation{background:rgba(255,200,0,.06);color:#ffe066;border:1px solid rgba(255,200,0,.13);}
+.cc-maritime{background:rgba(0,200,212,.07);color:#4de8f0;border:1px solid rgba(0,200,212,.14);}
+.cc-intelligence{background:rgba(184,207,224,.05);color:#6a8fa8;border:1px solid rgba(184,207,224,.1);}
+.sc-high{background:rgba(232,53,53,.1);color:#ff8080;}
+.sc-med{background:rgba(255,140,0,.08);color:#ffb74d;}
+.sc-info{background:rgba(26,140,255,.07);color:#5ab4ff;}
+.ai-body{padding:8px 10px;overflow-y:auto;height:100%;}
+.ai-step{display:flex;gap:7px;margin-bottom:7px;}
+.ai-num{width:16px;height:16px;border-radius:50%;background:rgba(26,140,255,.1);border:1px solid rgba(26,140,255,.22);display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--blue2);flex-shrink:0;margin-top:1px;}
+.ai-text{font-size:9px;color:var(--text2);line-height:1.6;}
+.ai-text strong{color:var(--text);}
+.ai-divider{height:1px;background:var(--border);margin:7px 0;}
+.ai-srcs{display:flex;flex-wrap:wrap;gap:3px;}
+.ai-src{font-size:7px;padding:1px 5px;background:var(--bg3);border:1px solid var(--border);border-radius:2px;color:var(--text3);letter-spacing:.06em;}
+.posture-row{padding:5px 10px;border-bottom:1px solid rgba(26,37,53,.6);display:flex;align-items:center;gap:7px;}
+.posture-row:last-child{border-bottom:none;}
+.pos-flag{font-size:12px;flex-shrink:0;}
+.pos-name{font-family:var(--sans);font-size:10px;font-weight:700;color:var(--text);flex:1;letter-spacing:.02em;}
+.pos-incidents{font-size:8px;min-width:30px;text-align:right;letter-spacing:.04em;}
+.pos-bar{width:40px;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.pos-fill{height:100%;border-radius:2px;}
+.pos-status{font-size:7px;padding:1px 5px;border-radius:2px;letter-spacing:.08em;min-width:32px;text-align:center;}
+.ps-norm{background:rgba(0,212,106,.07);color:var(--green);border:1px solid rgba(0,212,106,.14);}
+.ps-elev{background:rgba(255,140,0,.08);color:var(--orange);border:1px solid rgba(255,140,0,.18);}
+.ps-high{background:rgba(232,53,53,.1);color:var(--accent);border:1px solid rgba(232,53,53,.18);}
+.pred-row{padding:5px 10px;border-bottom:1px solid rgba(26,37,53,.6);}
+.pred-row:last-child{border-bottom:none;}
+.pred-q{font-family:var(--sans);font-size:10px;font-weight:500;color:var(--text);line-height:1.3;margin-bottom:4px;}
+.pred-bar-wrap{display:flex;align-items:center;gap:6px;}
+.pred-track{flex:1;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.pred-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;}
+.pred-pct{font-size:10px;color:var(--cyan2);min-width:30px;text-align:right;letter-spacing:.04em;}
+.cf-row{padding:6px 10px;border-bottom:1px solid rgba(26,37,53,.6);cursor:pointer;transition:background .12s;}
+.cf-row:hover{background:var(--bg3);}
+.cf-row:last-child{border-bottom:none;}
+.cf-top{display:flex;align-items:center;gap:5px;margin-bottom:2px;}
+.cf-flag{font-size:12px;}
+.cf-name{font-family:var(--sans);font-size:11px;font-weight:700;color:#fff;flex:1;line-height:1.2;}
+.cf-detail{font-size:9px;color:var(--text2);line-height:1.4;margin-bottom:2px;}
+.cf-cas{font-size:7px;color:var(--text3);letter-spacing:.05em;display:flex;align-items:center;gap:4px;}
+.cf-cas-dot{width:4px;height:4px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+
+/* ── MODAL ───────────────────────────────────── */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#modal.open{display:flex;}
+#modalBox{background:var(--bg2);border:1px solid var(--border3);max-width:580px;width:100%;max-height:80vh;overflow-y:auto;position:relative;box-shadow:0 20px 80px rgba(0,0,0,.9),0 0 0 1px rgba(42,64,96,.3);}
+#mHead{background:var(--bg3);padding:14px 18px;border-bottom:1px solid var(--border);}
+#mCat{font-size:7px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+#mCat::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);}
+#mTitle{font-family:var(--sans);font-size:17px;font-weight:700;color:#fff;line-height:1.3;}
+#mBody{padding:16px 18px;}
+#mMeta{font-size:8px;color:var(--text3);margin-bottom:12px;letter-spacing:.04em;border-left:2px solid var(--border3);padding-left:8px;}
+#mSummary{font-size:11px;line-height:1.8;color:var(--text2);}
+#mLink{display:inline-flex;align-items:center;gap:6px;background:var(--blue);color:#fff;padding:6px 14px;font-size:8px;letter-spacing:.12em;text-transform:uppercase;margin-top:14px;transition:background .15s;}
+#mLink:hover{background:var(--blue2);}
+#mClose{position:absolute;top:10px;right:12px;font-size:15px;color:var(--text3);cursor:pointer;transition:color .15s;}
+#mClose:hover{color:#fff;}
+
+/* ── TOASTS ──────────────────────────────────── */
+#toasts{position:fixed;bottom:16px;right:16px;z-index:600;display:flex;flex-direction:column;gap:5px;}
+.toast{background:var(--bg3);border:1px solid var(--border2);border-left:2px solid var(--accent);padding:7px 12px;font-size:9px;letter-spacing:.04em;color:var(--text);animation:toastIn .2s ease;max-width:290px;box-shadow:0 4px 24px rgba(0,0,0,.7);}
+@keyframes toastIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── ALERTS / COPY LINK ──────────────────────── */
+#alertPanel{position:fixed;right:0;top:34px;bottom:0;width:310px;background:var(--bg2);border-left:1px solid var(--border3);z-index:400;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.6);}
+#alertPanel.open{transform:translateX(0);}
+.ap-hd{background:var(--bg3);padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ap-title{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text);}
+.ap-close{color:var(--text3);font-size:14px;cursor:pointer;transition:color .15s;}
+.ap-close:hover{color:var(--accent);}
+.ap-body{padding:14px;flex:1;overflow-y:auto;}
+.ap-label{font-size:7px;letter-spacing:.16em;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:5px;margin-top:12px;}
+.ap-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:7px 10px;font:inherit;font-size:10px;outline:none;letter-spacing:.04em;transition:border-color .15s;}
+.ap-input:focus{border-color:var(--blue2);}
+.ap-row{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:9px;letter-spacing:.04em;cursor:pointer;}
+.ap-row input{accent-color:var(--accent);}
+.ap-save{width:100%;background:var(--accent);color:#fff;padding:8px;font-size:8px;letter-spacing:.14em;text-transform:uppercase;margin-top:12px;transition:background .15s;}
+.ap-save:hover{background:var(--accent2);}
+.ap-chip{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);padding:5px 8px;margin-bottom:4px;font-size:8px;letter-spacing:.04em;}
+.ap-chip-del{color:var(--accent);cursor:pointer;font-size:11px;}
+
+@media(max-width:1280px){#leftPanel{display:none;}}
+@media(max-width:960px){#rightPanel{display:none;}}
+@media(max-width:720px){#bottom{height:200px;}.bp:nth-child(n+3){display:none;}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- TOP BAR -->
+<div id="topBar">
+  <div class="tb-brand">
+    <span class="tb-logo">CAT<em>-</em>SEE<em>-</em>WORLD</span>
+    <span class="tb-ver">v2.1</span>
+  </div>
+  <div class="tb-seg"><div class="blink-dot"></div><span class="tb-live">LIVE</span></div>
+  <div class="tb-seg tb-time" id="tbTime">—</div>
+  <div class="tb-seg">
+    <div class="defcon-wrap">
+      <span class="defcon-label">DEFCON</span>
+      <div class="defcon-pips">
+        <div class="dp dp-1"></div>
+        <div class="dp dp-2"></div>
+        <div class="dp dp-3"></div>
+        <div class="dp dp-4 on"></div>
+        <div class="dp dp-5 on"></div>
+      </div>
+      <span class="defcon-val">4 — NORMAL</span>
+    </div>
+  </div>
+  <div class="tb-metrics">
+    <div class="tb-metric"><div class="tb-metric-lbl">Active Conflicts</div><div class="tb-metric-val c-red" id="mConflicts">31 ▲</div></div>
+    <div class="tb-metric"><div class="tb-metric-lbl">Tension Index</div><div class="tb-metric-val c-org">7.4 / 10</div></div>
+    <div class="tb-metric"><div class="tb-metric-lbl">Displaced</div><div class="tb-metric-val c-red">117M</div></div>
+    <div class="tb-metric"><div class="tb-metric-lbl">VIX</div><div class="tb-metric-val c-org" id="mVIX">21.3</div></div>
+    <div class="tb-metric"><div class="tb-metric-lbl">Cyber Alerts</div><div class="tb-metric-val c-red" id="mCyber">14 NEW</div></div>
+    <div class="tb-metric"><div class="tb-metric-lbl">Intel Items</div><div class="tb-metric-val c-grn" id="mFeed">—</div></div>
+  </div>
+  <div class="tb-actions">
+    <button class="tb-btn" id="srchToggle" onclick="toggleSearch()">⌕ SEARCH</button>
+    <button class="tb-btn" onclick="loadMore()">▼ MORE</button>
+    <button class="tb-btn" onclick="toggleAlerts()">🔔 ALERTS</button>
+    <button class="tb-btn" onclick="copyLink()">⎘ LINK</button>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div id="ticker">
+  <div class="tk-tag"><div class="tk-live-dot"></div>BREAKING</div>
+  <div class="tk-scroll">
+    <div class="tk-inner" id="tkInner">
+      <span class="tk-item">Connecting to live feeds…</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN AREA -->
+<div id="mid">
+
+  <!-- LEFT PANEL -->
+  <div id="leftPanel">
+    <div class="lp-hd"><span>MAP LAYERS</span><span class="lp-hd-tag">GLOBAL</span></div>
+    <div class="lp-scroll">
+      <div class="lyr on" id="lyr-conflict" onclick="toggleLayer('conflict',this)">
+        <div class="lyr-check">✓</div><span class="lyr-icon">🔴</span><span class="lyr-lbl">Conflict Zones</span><span class="lyr-cnt">10</span>
+      </div>
+      <div class="lyr on" id="lyr-quake" onclick="toggleLayer('quake',this)">
+        <div class="lyr-check">✓</div><span class="lyr-icon">🟠</span><span class="lyr-lbl">Seismic Activity</span><span class="lyr-cnt" id="quakeCnt">5</span>
+      </div>
+      <div class="lyr on" id="lyr-cyber" onclick="toggleLayer('cyber',this)">
+        <div class="lyr-check">✓</div><span class="lyr-icon">🔵</span><span class="lyr-lbl">Cyber Threats</span><span class="lyr-cnt">7</span>
+      </div>
+      <div class="lyr on" id="lyr-positive" onclick="toggleLayer('positive',this)">
+        <div class="lyr-check">✓</div><span class="lyr-icon">🟢</span><span class="lyr-lbl">Positive Events</span><span class="lyr-cnt">4</span>
+      </div>
+
+      <div class="lp-hd" style="margin-top:2px;">INSTABILITY INDEX</div>
+      <div id="riskMini"></div>
+
+      <div class="lp-hd" style="margin-top:2px;">CYBER INTEL</div>
+      <div id="cyberMini"></div>
+
+      <div class="lp-hd" style="margin-top:2px;">PREDICTION MARKETS</div>
+      <div id="predMini"></div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div id="mapArea">
+    <div id="mapBar">
+      <span class="mb-title">Global Situation Map</span>
+      <span class="mb-badge">● LIVE TRACKING</span>
+      <span class="mb-coords" id="mbCoords">Hover map · Click markers for intel</span>
+    </div>
+    <div id="filterStrip">
+      <button class="fs-btn on" data-cat="all" onclick="setFilter(this)">ALL</button>
+      <button class="fs-btn" data-cat="Conflict" onclick="setFilter(this)">CONFLICT</button>
+      <button class="fs-btn" data-cat="Cyber" onclick="setFilter(this)">CYBER</button>
+      <button class="fs-btn" data-cat="Natural" onclick="setFilter(this)">NATURAL</button>
+      <button class="fs-btn" data-cat="Markets" onclick="setFilter(this)">MARKETS</button>
+      <button class="fs-btn" data-cat="Climate" onclick="setFilter(this)">CLIMATE</button>
+      <button class="fs-btn" data-cat="Unrest" onclick="setFilter(this)">UNREST</button>
+      <button class="fs-btn" data-cat="Aviation" onclick="setFilter(this)">AVIATION</button>
+      <button class="fs-btn" data-cat="Maritime" onclick="setFilter(this)">MARITIME</button>
+      <button class="fs-btn" data-cat="Intelligence" onclick="setFilter(this)">INTELLIGENCE</button>
+    </div>
+    <div id="searchBar">
+      <input id="srchInput" placeholder="Search intel — keyword, country, category…" autocomplete="off"/>
+      <button id="srchBtn" onclick="doSearch()">↵ EXECUTE</button>
+    </div>
+    <div id="worldMap">
+      <svg id="mapSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="csw-tip" id="mapTip"></div>
+      <div id="mapDetail">
+        <button id="mdClose" onclick="closeDetail()">✕</button>
+        <div id="mdImgWrap"></div>
+        <div id="mdBody">
+          <div id="mdCat"><div id="mdCatDot"></div><span id="mdCatTxt"></span></div>
+          <div id="mdName"></div>
+          <div id="mdDetail"></div>
+          <div id="mdMeta"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="rightPanel">
+    <div class="rp-hd">
+      <div class="rp-title"><span style="color:var(--accent)">●</span> COUNTRY RISK INDEX</div>
+      <div class="rp-live">LIVE</div>
+    </div>
+    <div id="riskWidget"></div>
+
+    <div class="rp-hd" style="margin-top:2px;">
+      <div class="rp-title"><span style="color:var(--orange)">▲</span> SEISMIC ACTIVITY</div>
+      <div class="rp-badge">USGS</div>
+    </div>
+    <div id="quakeWidget"></div>
+
+    <div class="rp-hd" style="margin-top:2px;flex-shrink:0;">
+      <div class="rp-title"><span style="color:var(--green)">$</span> MARKET SNAPSHOT</div>
+      <button onclick="refreshMarkets()" style="font-size:7px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;">↻ REFRESH</button>
+    </div>
+    <div id="mktWidget" style="overflow-y:auto;flex:1;"></div>
+  </div>
+</div>
+
+<!-- BOTTOM PANELS -->
+<div id="bottom">
+  <!-- Panel 1: Intel Feed -->
+  <div class="bp">
+    <div class="bp-hd">
+      <div class="bp-title"><div class="bp-live"></div>INTEL FEED <span id="feedCnt" style="color:var(--text3);font-size:7px;margin-left:4px;letter-spacing:.06em;"></span></div>
+      <button onclick="loadMore()" style="font-size:7px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;">▼ MORE</button>
+    </div>
+    <div class="bp-body" id="feedGrid"></div>
+  </div>
+
+  <!-- Panel 2: AI Brief -->
+  <div class="bp">
+    <div class="bp-hd">
+      <div class="bp-title">🤖 AI INTELLIGENCE BRIEF</div>
+      <span style="font-size:7px;color:var(--blue2);letter-spacing:.08em;border:1px solid rgba(26,140,255,.2);padding:1px 5px;border-radius:2px;">SYNTHESIZED</span>
+    </div>
+    <div class="bp-body">
+      <div class="ai-body">
+        <div class="ai-step"><div class="ai-num">1</div><div class="ai-text"><strong>Strategic Overview:</strong> Tensions elevated across three theatres. Eastern Europe conflict straining NATO resupply logistics. PRC media hawkish framing at multi-year high coinciding with increased PLAN exercises near Taiwan Strait (+40%).</div></div>
+        <div class="ai-step"><div class="ai-num">2</div><div class="ai-text"><strong>Economic Flashpoints:</strong> Energy volatility compounding macro fragility in frontier economies. Gold resistance to geopolitical pressure signals near-term dollar strength and institutional risk-off positioning.</div></div>
+        <div class="ai-step"><div class="ai-num">3</div><div class="ai-text"><strong>Infrastructure:</strong> Undersea cable incidents exceed statistical norms over 30 days. GPS jamming over the Baltic corroborated by Nordic defence agency intelligence.</div></div>
+        <div class="ai-step"><div class="ai-num">4</div><div class="ai-text"><strong>Cyber Posture:</strong> Volt Typhoon active in critical infrastructure pre-positioning. CISA elevated advisory. State-sponsored APT activity at 18-month high across FVEY-adjacent systems.</div></div>
+        <div class="ai-divider"></div>
+        <div class="ai-srcs"><span class="ai-src">ISW</span><span class="ai-src">ACLED</span><span class="ai-src">GDELT</span><span class="ai-src">CISA</span><span class="ai-src">IMF</span><span class="ai-src">OCHA</span><span class="ai-src">RIPE NCC</span><span class="ai-src">NetBlocks</span><span class="ai-src">USGS</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 3: Strategic Posture + Predictions -->
+  <div class="bp">
+    <div class="bp-hd">
+      <div class="bp-title">⚔ STRATEGIC POSTURE</div>
+      <span id="postureTime" style="font-size:7px;color:var(--text3);letter-spacing:.04em;">—</span>
+    </div>
+    <div class="bp-body">
+      <div id="postureWidget"></div>
+      <div style="padding:4px 10px;font-size:7px;letter-spacing:.16em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);border-top:1px solid var(--border);">PREDICTION MARKETS</div>
+      <div id="predWidget"></div>
+    </div>
+  </div>
+
+  <!-- Panel 4: Active Conflicts -->
+  <div class="bp">
+    <div class="bp-hd">
+      <div class="bp-title">🔥 ACTIVE CONFLICT TRACKER</div>
+      <span id="cfCount" style="font-size:7px;color:var(--accent);letter-spacing:.08em;border:1px solid rgba(232,53,53,.2);padding:1px 5px;border-radius:2px;background:rgba(232,53,53,.06);">— ACTIVE</span>
+    </div>
+    <div class="bp-body" id="cfWidget"></div>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<!-- MODAL -->
+<div id="modal" onclick="modalBg(event)">
+  <div id="modalBox">
+    <div id="mHead">
+      <div id="mCat"></div>
+      <div id="mTitle"></div>
+      <button id="mClose" onclick="closeModal()">✕</button>
+    </div>
+    <div id="mBody">
+      <div id="mMeta"></div>
+      <div id="mSummary"></div>
+      <a id="mLink" href="#" target="_blank" rel="noopener">↗ READ FULL STORY</a>
+    </div>
+  </div>
+</div>
+
+<!-- ALERT PANEL -->
+<div id="alertPanel">
+  <div class="ap-hd">
+    <span class="ap-title">Alert Configuration</span>
+    <button class="ap-close" onclick="toggleAlerts()">✕</button>
+  </div>
+  <div class="ap-body">
+    <span class="ap-label">Keyword Filter</span>
+    <input class="ap-input" type="text" id="alertKw" placeholder="e.g. Taiwan, Iran, Earthquake…"/>
+    <span class="ap-label">Categories</span>
+    <label class="ap-row"><input type="checkbox" checked id="ac-conflict"> Conflict</label>
+    <label class="ap-row"><input type="checkbox" checked id="ac-cyber"> Cyber</label>
+    <label class="ap-row"><input type="checkbox" checked id="ac-natural"> Natural Events</label>
+    <label class="ap-row"><input type="checkbox" id="ac-markets"> Markets</label>
+    <label class="ap-row"><input type="checkbox" id="ac-climate"> Climate</label>
+    <span class="ap-label">Min Severity</span>
+    <select class="ap-input" id="alertSev" style="cursor:pointer;">
+      <option value="all">All Events</option>
+      <option value="high" selected>High Only</option>
+      <option value="med">Medium & High</option>
+    </select>
+    <button class="ap-save" onclick="saveAlert()">▶ SAVE ALERT PROFILE</button>
+    <div id="alertList" style="margin-top:12px;"></div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ══════ STATE ══════════════════════════════════════ */
+const API='';
+let allNews=[],visibleCount=40,activeFilter='all';
+let layerState={conflict:true,quake:true,cyber:true,positive:true};
+let _feedStore=[];
+let alerts=[];
+try{alerts=JSON.parse(localStorage.getItem('csw_alerts')||'[]');}catch(e){}
+
+/* ══════ STATIC DATA ════════════════════════════════ */
+const MAP_CONFLICT=[
+  {lat:48.5,lon:35.0,name:'Ukraine — Zaporizhzhia Front',sev:'active',detail:'Active artillery along 1,200km front. Drone warfare intensifying.',time:'Live'},
+  {lat:15.5,lon:32.5,name:'Sudan — Khartoum',sev:'active',detail:'RSF advancing. 7M+ displaced. Humanitarian catastrophe.',time:'Live'},
+  {lat:31.5,lon:34.5,name:'Gaza Strip',sev:'active',detail:'IDF operations ongoing. Ceasefire talks in Cairo stalled.',time:'Live'},
+  {lat:19.0,lon:96.5,name:'Myanmar',sev:'escalate',detail:'Junta airstrikes escalating. PDF/EAOs hold 40% of territory.',time:'3h ago'},
+  {lat:15.3,lon:44.1,name:'Yemen — Houthi Operations',sev:'escalate',detail:'Red Sea maritime attacks. US/UK airstrikes ongoing.',time:'5h ago'},
+  {lat:6.0,lon:21.0,name:'DRC — Eastern Congo',sev:'active',detail:'M23 offensive. 6.9M internally displaced.',time:'Live'},
+  {lat:3.5,lon:43.0,name:'Somalia',sev:'monitor',detail:'Al-Shabaab operations. AMISOM withdrawal ongoing.',time:'8h ago'},
+  {lat:9.0,lon:7.5,name:'Nigeria — Sahel Belt',sev:'escalate',detail:'Boko Haram/ISWAP active. 3M+ displaced.',time:'6h ago'},
+  {lat:34.5,lon:69.2,name:'Afghanistan',sev:'monitor',detail:'Taliban consolidation. Humanitarian access restricted.',time:'12h ago'},
+  {lat:25.0,lon:45.0,name:'Yemen/Saudi Border',sev:'monitor',detail:'Cross-border missile incidents. Air defence intercepts.',time:'9h ago'},
+];
+const MAP_CYBER=[
+  {lat:38.9,lon:-77.0,name:'Washington DC',detail:'Volt Typhoon OT network pre-positioning. CISA advisory issued.'},
+  {lat:51.5,lon:-0.1,name:'London',detail:'Ransomware targeting Lloyd\'s insurance systems. HIGH severity.'},
+  {lat:35.7,lon:139.7,name:'Tokyo',detail:'BGP route hijack affected 12 Japanese ISPs for 18 minutes.'},
+  {lat:48.9,lon:2.3,name:'Paris',detail:'LockBit 4.0 targeting European logistics operators. ENISA alert.'},
+  {lat:37.6,lon:55.7,name:'Moscow',detail:'GRU-linked phishing targeting NATO critical infrastructure.'},
+  {lat:22.3,lon:114.2,name:'Hong Kong',detail:'State-sponsored banking API intrusion attempts.'},
+  {lat:1.3,lon:103.8,name:'Singapore',detail:'APAC financial hub credential stuffing campaign.'},
+];
+const MAP_POSITIVE=[
+  {lat:52.5,lon:13.4,name:'Berlin',detail:'Germany hits 65% renewable energy — historic milestone.'},
+  {lat:-1.3,lon:36.8,name:'Nairobi',detail:'Mountain gorilla population up 20% — conservation success.'},
+  {lat:14.7,lon:-17.5,name:'Dakar',detail:'West Africa declared polio-free after 3-year campaign.'},
+  {lat:28.6,lon:77.2,name:'New Delhi',detail:'India installs 200GW solar, 2 years ahead of schedule.'},
+];
+const QUAKE_COORDS={'tokyo':[35.7,139.7],'aegean':[38.5,25.5],'greece':[38.5,25.5],'kamchatka':[52.0,160.0],'chiapas':[16.0,-93.5],'mexico':[19.4,-99.1],'vanuatu':[-16.0,168.0],'chile':[-24.0,-69.0],'japan':[35.7,138.0],'indonesia':[-5.0,120.0],'philippines':[13.0,122.0],'alaska':[64.0,-153.0],'italy':[42.0,13.0],'turkey':[39.0,35.0],'iran':[32.0,53.0],'peru':[-12.0,-77.0],'new zealand':[-41.0,174.0],'pakistan':[30.0,70.0]};
+const RISK=[
+  {name:'Ukraine',score:96,chg:'+3',color:'#e83535',detail:'U:100 S:85 I:90'},
+  {name:'Gaza/Israel',score:94,chg:'+1',color:'#e83535',detail:'U:100 S:70 I:95'},
+  {name:'Sudan',score:88,chg:'+5',color:'#e83535',detail:'U:95 S:60 I:80'},
+  {name:'Iran',score:82,chg:'+2',color:'#ff8c00',detail:'U:80 S:70 I:90'},
+  {name:'Myanmar',score:78,chg:'+4',color:'#ff8c00',detail:'U:85 S:55 I:75'},
+  {name:'Taiwan Strait',score:72,chg:'0',color:'#ff8c00',detail:'U:60 S:90 I:65'},
+  {name:'Russia',score:68,chg:'+1',color:'#ffc800',detail:'U:70 S:50 I:80'},
+  {name:'Pakistan',score:58,chg:'-2',color:'#ffc800',detail:'U:65 S:40 I:60'},
+];
+const CYBER_DATA=[
+  {icon:'⚡',title:'Volt Typhoon — US water utility OT networks',meta:'CISA · CRITICAL · 22m'},
+  {icon:'🔒',title:'LockBit 4.0 — European logistics operators',meta:'Mandiant · HIGH · 1h'},
+  {icon:'🌐',title:'BGP hijack — 12 Japanese ISPs, 18 min outage',meta:'RIPE NCC · HIGH · 2h'},
+  {icon:'🔑',title:'RansomHub (ex-ALPHV) resurfaces — FBI alert',meta:'FBI · MEDIUM · 4h'},
+];
+const POSTURE=[
+  {flag:'🇷🇺',name:'RUSSIA',incidents:18,status:'ELEV',threat:78,color:'#e83535'},
+  {flag:'🇾🇪',name:'RED SEA / HOUTHI',incidents:9,status:'HIGH',threat:82,color:'#e83535'},
+  {flag:'🇮🇷',name:'IRAN',incidents:5,status:'NORM',threat:62,color:'#ff8c00'},
+  {flag:'🌊',name:'TAIWAN STRAIT',incidents:7,status:'NORM',threat:48,color:'#ffc800'},
+  {flag:'⚓',name:'BALTIC SEA',incidents:12,status:'ELEV',threat:66,color:'#ff8c00'},
+  {flag:'🇰🇵',name:'DPRK',incidents:3,status:'NORM',threat:55,color:'#ffc800'},
+];
+const PREDICTIONS=[
+  {q:'Russia–Ukraine ceasefire 2025?',yes:18,trend:'→'},
+  {q:'Taiwan Strait military incident 12mo?',yes:31,trend:'↑'},
+  {q:'US recession before Q1 2026?',yes:42,trend:'↑'},
+  {q:'Iran nuclear threshold 2025?',yes:24,trend:'→'},
+  {q:'Hamas–Israel hostage deal Sep?',yes:55,trend:'↑'},
+];
+const ACTIVE_CONFLICTS=[
+  {flag:'🇺🇦',name:'Ukraine — Eastern Front',status:'active',detail:'1,200km active front. Daily drone + artillery exchanges. NATO resupply corridors under pressure.',cas:'~600k total casualties'},
+  {flag:'🇸🇩',name:'Sudan Civil War',status:'escalate',detail:'RSF vs SAF. Khartoum partially held. Humanitarian collapse. Worst crisis since Darfur.',cas:'150k+ deaths'},
+  {flag:'🇵🇸',name:'Gaza Strip',status:'active',detail:'IDF operations ongoing. Ceasefire negotiations in Cairo stalled. Rafah crossing intermittent.',cas:'43k+ deaths'},
+  {flag:'🇲🇲',name:'Myanmar Civil War',status:'escalate',detail:'Resistance PDF + EAOs hold 40% of territory. Junta escalating airstrikes on civilian sites.',cas:'50k+ deaths'},
+  {flag:'🇾🇪',name:'Yemen — Houthi Ops',status:'monitor',detail:'Red Sea merchant attacks continuing. US/UK retaliatory airstrikes on Houthi positions weekly.',cas:'377k deaths'},
+];
+const FB_MARKETS=[
+  {sym:'SPX',name:'S&P 500',price:'5,234',pfx:'',chg:'+0.41%',dir:'up'},
+  {sym:'BTC',name:'Bitcoin',price:'67,441',pfx:'$',chg:'-1.34%',dir:'down'},
+  {sym:'XAU',name:'Gold',price:'2,318',pfx:'$',chg:'-0.22%',dir:'down'},
+  {sym:'OIL',name:'Crude Oil',price:'82.30',pfx:'$',chg:'+1.42%',dir:'up'},
+  {sym:'EUR',name:'EUR/USD',price:'1.0842',pfx:'',chg:'+0.08%',dir:'up'},
+  {sym:'VIX',name:'Volatility',price:'21.30',pfx:'',chg:'+9.3%',dir:'up'},
+];
+const FB_QUAKES=[
+  {mag:'5.8',loc:'Near Tokyo, Japan',depth:'35km',ago:'14m',url:'https://earthquake.usgs.gov'},
+  {mag:'5.1',loc:'Aegean Sea, Greece',depth:'8km',ago:'1h',url:'https://earthquake.usgs.gov'},
+  {mag:'4.7',loc:'Kamchatka, Russia',depth:'90km',ago:'3h',url:'https://earthquake.usgs.gov'},
+  {mag:'4.4',loc:'Chiapas, Mexico',depth:'20km',ago:'5h',url:'https://earthquake.usgs.gov'},
+  {mag:'4.2',loc:'Vanuatu',depth:'65km',ago:'7h',url:'https://earthquake.usgs.gov'},
+];
+const FB_NEWS=[
+  {cat:'Conflict',sev:'high',headline:'NATO Emergency Summit Convened as Frontline Situation Evolves',summary:'Allied defence ministers hold emergency session. Air defence assets repositioned; resupply corridors under review.',source:'ISW / NATO',url:'#',time:'14m ago'},
+  {cat:'Cyber',sev:'high',headline:'Volt Typhoon Pre-Positioning Detected in US Critical Infrastructure',summary:'CISA advisory after ICS compromise found across 6 utility operators. PRC-linked attribution at high confidence.',source:'CISA',url:'https://www.cisa.gov',time:'22m ago'},
+  {cat:'Markets',sev:'info',headline:'Fed Signals Pause on Rate Cuts; Inflation Data Awaited',summary:'Fed chair reiterates data-dependent stance. Markets price in two cuts for 2025.',source:'Bloomberg',url:'#',time:'47m ago'},
+  {cat:'Natural',sev:'med',headline:'Typhoon Intensifies to Category 4 — Landfall Projected for Northern Philippines',summary:'Signal 3 warnings issued. Evacuation orders for 200,000+ in coastal provinces.',source:'PAGASA',url:'#',time:'1h ago'},
+  {cat:'Conflict',sev:'high',headline:'Sudan Civil War: RSF Seizes Water Infrastructure in Khartoum North',summary:'Aid agencies warn of humanitarian catastrophe; 3M already displaced in Darfur.',source:'OCHA',url:'#',time:'1h 20m ago'},
+  {cat:'Intelligence',sev:'info',headline:'GDELT: Hawkish Language in PRC State Media Reaches 5-Year High',summary:'Semantic analysis of 2.3M articles: 78% escalatory framing increase over 90 days.',source:'GDELT / AI',url:'#',time:'2h ago'},
+  {cat:'Climate',sev:'med',headline:'Wildfires Burn 8,400 Hectares in Southern Chile',summary:'Three active fires spreading. Military deployed. State of emergency declared.',source:'CONAF Chile',url:'#',time:'2h 15m ago'},
+  {cat:'Maritime',sev:'med',headline:'Houthi Warning Issued for Red Sea Transit',summary:'Yemen group issues new navigation advisory. Insurance premiums spike 40%.',source:"Lloyd's / IMB",url:'#',time:'3h ago'},
+  {cat:'Markets',sev:'med',headline:'Turkish Lira Hits Record Low vs USD',summary:'Inflation at 68%; FX reserves at critical floor. IMF consultations underway.',source:'Bloomberg',url:'#',time:'3h 30m ago'},
+  {cat:'Cyber',sev:'high',headline:'LockBit 4.0 Variant Disrupts European Logistics Operators',summary:'Three major firms hit; Mandiant response teams deployed across EU.',source:'Mandiant',url:'#',time:'4h ago'},
+  {cat:'Natural',sev:'med',headline:'M5.8 Earthquake Strikes Near Tokyo — No Tsunami Warning',summary:'USGS confirms shallow 35km depth. JMA monitoring aftershock sequence.',source:'USGS / JMA',url:'#',time:'4h 30m ago'},
+  {cat:'Unrest',sev:'med',headline:'Mass Protests Erupt in Tbilisi Over Government Crackdown',summary:'50,000+ demonstrators. Police deploy water cannon; EU emergency statement.',source:'Reuters',url:'#',time:'5h ago'},
+  {cat:'Aviation',sev:'info',headline:'Airspace Restrictions Extended Over Eastern Baltic States',summary:'Finland, Estonia, Latvia issue NOTAMs citing GPS jamming risk from Russian activity.',source:'Eurocontrol',url:'#',time:'6h ago'},
+  {cat:'Climate',sev:'med',headline:'Amazon Drought — Record Low River Levels Threaten 1.2M',summary:'INPE satellite data shows worst drought extent in 50-year record.',source:'INPE / Reuters',url:'#',time:'7h ago'},
+  {cat:'Intelligence',sev:'info',headline:'Wagner Group Expands to Three New Provinces in Mali',summary:'Satellite imagery confirms new FOBs. French withdrawal creating vacuum.',source:'ACLED',url:'#',time:'8h ago'},
+  {cat:'Unrest',sev:'med',headline:'General Strike Paralyses Dakar — Election Audit Demanded',summary:'Transport, schools, markets closed. Security forces at government buildings.',source:'AFP',url:'#',time:'9h ago'},
+  {cat:'Aviation',sev:'info',headline:'Near-Miss Over Oman Prompts ICAO Investigation',summary:'Two wide-body aircraft at FL350 within 200ft vertical separation.',source:'ICAO',url:'#',time:'10h ago'},
+  {cat:'Maritime',sev:'med',headline:'Container Ship Seized Near Strait of Hormuz — 22 Detained',summary:'IRGCN forces board Marshall Islands-flagged vessel. Crew of 22 in custody.',source:'UKMTO',url:'#',time:'11h ago'},
+];
+
+/* ══════ SVG MAP ENGINE — D3 + TopoJSON Natural Earth ══════ */
+const NS='http://www.w3.org/2000/svg';
+function mkEl(tag,attrs={},parent){
+  const el=document.createElementNS(NS,tag);
+  for(const[k,v] of Object.entries(attrs))el.setAttribute(k,v);
+  if(parent)parent.appendChild(el);
+  return el;
+}
+
+let _svg=null,_gMain=null,_W=0,_H=0,_projection=null,_path=null,_gMarkers={};
+let _zoom=null,_currentTransform=d3.zoomIdentity;
+
+function llXY(lon,lat){
+  if(!_projection)return[0,0];
+  const pt=_projection([lon,lat]);
+  return pt?[_currentTransform.applyX(pt[0]),_currentTransform.applyY(pt[1])]:[0,0];
+}
+function screenLL(sx,sy){
+  if(!_projection)return[0,0];
+  const inv=_currentTransform.invert([sx,sy]);
+  return _projection.invert(inv)||[0,0];
+}
+function applyTransform(){/* handled by d3.zoom */}
+
+function drawLabels(g,projection){
+  const LABELS=[
+    {t:'NORTH AMERICA',lon:-98,lat:50,s:13,op:0.5},{t:'SOUTH AMERICA',lon:-58,lat:-15,s:13,op:0.5},
+    {t:'EUROPE',lon:15,lat:52,s:11,op:0.5},{t:'AFRICA',lon:22,lat:2,s:13,op:0.5},
+    {t:'ASIA',lon:90,lat:48,s:14,op:0.5},{t:'AUSTRALIA',lon:134,lat:-27,s:11,op:0.5},
+    {t:'RUSSIA',lon:95,lat:62,s:10,op:0.4},{t:'CANADA',lon:-96,lat:60,s:10,op:0.4},
+    {t:'CHINA',lon:104,lat:35,s:10,op:0.4},{t:'INDIA',lon:80,lat:22,s:10,op:0.4},
+    {t:'BRAZIL',lon:-52,lat:-10,s:10,op:0.4},{t:'UNITED STATES',lon:-98,lat:37,s:10,op:0.4},
+    {t:'SUDAN',lon:30,lat:16,s:8,op:0.38},{t:'UKRAINE',lon:32,lat:49,s:8,op:0.38},
+    {t:'YEMEN',lon:48,lat:16,s:8,op:0.38},{t:'IRAN',lon:53,lat:32,s:8,op:0.38},
+    {t:'MYANMAR',lon:96,lat:20,s:8,op:0.38},{t:'D.R. CONGO',lon:24,lat:-2,s:7.5,op:0.35},
+    {t:'NIGERIA',lon:8,lat:10,s:8,op:0.38},{t:'AFGHANISTAN',lon:66,lat:33,s:7,op:0.35},
+    {t:'SOMALIA',lon:45,lat:5,s:7,op:0.35},{t:'MEXICO',lon:-102,lat:23,s:8,op:0.38},
+  ];
+  LABELS.forEach(lb=>{
+    const pt=projection([lb.lon,lb.lat]);
+    if(!pt)return;
+    const t=mkEl('text',{x:pt[0],y:pt[1],'font-family':"'Rajdhani',sans-serif",'font-size':lb.s,
+      'font-weight':'600',fill:'#4a7a9b',opacity:lb.op,'text-anchor':'middle',
+      'dominant-baseline':'middle','pointer-events':'none','letter-spacing':'0.08em'},g);
+    t.setAttribute('data-base-size',lb.s);
+    t.textContent=lb.t;
+  });
+}
+
+async function initMap(){
+  const div=document.getElementById('worldMap');
+  _W=div.offsetWidth||900; _H=div.offsetHeight||440;
+  const svgEl=document.getElementById('mapSvg');
+  _svg=d3.select(svgEl);
+  svgEl.setAttribute('viewBox',`0 0 ${_W} ${_H}`);
+
+  // Defs — glow filter
+  const defs=_svg.append('defs');
+  const flt=defs.append('filter').attr('id','glow').attr('x','-80%').attr('y','-80%').attr('width','260%').attr('height','260%');
+  flt.append('feGaussianBlur').attr('in','SourceGraphic').attr('stdDeviation','3.5').attr('result','blur');
+  const mg=flt.append('feMerge');
+  mg.append('feMergeNode').attr('in','blur');
+  mg.append('feMergeNode').attr('in','SourceGraphic');
+
+  // Ocean background
+  _svg.append('rect').attr('width',_W).attr('height',_H).attr('fill','#040c18');
+
+  // Projection — Natural Earth
+  _projection=d3.geoNaturalEarth1()
+    .scale(_W/6.4)
+    .translate([_W/2, _H/2]);
+  _path=d3.geoPath().projection(_projection);
+
+  _gMain=_svg.append('g').attr('id','gMain');
+
+  // Graticule
+  const graticule=d3.geoGraticule().step([30,30]);
+  _gMain.append('path').datum(graticule()).attr('fill','none').attr('stroke','#0c1c2c').attr('stroke-width',0.4).attr('d',_path);
+  // Equator highlight
+  _gMain.append('path').datum({type:'LineString',coordinates:[[-180,0],[180,0]]}).attr('fill','none').attr('stroke','#182e48').attr('stroke-width',0.7).attr('d',_path);
+  // Prime meridian
+  _gMain.append('path').datum({type:'LineString',coordinates:[[0,-90],[0,90]]}).attr('fill','none').attr('stroke','#182e48').attr('stroke-width',0.7).attr('d',_path);
+
+  // Load TopoJSON world data
+  let world;
+  try{
+    world=await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+  }catch(e){
+    console.warn('TopoJSON load failed, using fallback');
+    world=null;
+  }
+
+  const gLand=_gMain.append('g').attr('id','gLand');
+  if(world){
+    const countries=topojson.feature(world,world.objects.countries);
+    const borders=topojson.mesh(world,world.objects.countries,(a,b)=>a!==b);
+    gLand.selectAll('path.country')
+      .data(countries.features)
+      .enter().append('path')
+      .attr('class','country')
+      .attr('fill','#0d1c2e')
+      .attr('stroke','#1a3350')
+      .attr('stroke-width',0.4)
+      .attr('d',_path);
+    gLand.append('path').datum(borders).attr('fill','none').attr('stroke','#0b1a2c').attr('stroke-width',0.6).attr('d',_path);
+    // Sphere outline
+    _gMain.insert('path','g').datum({type:'Sphere'}).attr('fill','#040c18').attr('stroke','#1a3350').attr('stroke-width',0.5).attr('d',_path);
+  }
+
+  // Labels
+  const gLabels=_gMain.append('g').attr('id','gLabels');
+  drawLabels(gLabels.node(),_projection);
+
+  // Marker groups (SVG, not D3 selections, for compat with existing addMarker())
+  _gMarkers.positive=mkEl('g',{id:'g-positive'},_gMain.node());
+  _gMarkers.cyber=mkEl('g',{id:'g-cyber'},_gMain.node());
+  _gMarkers.quake=mkEl('g',{id:'g-quake'},_gMain.node());
+  _gMarkers.conflict=mkEl('g',{id:'g-conflict'},_gMain.node());
+
+  MAP_CONFLICT.forEach(addConflict);
+  MAP_CYBER.forEach(addCyber);
+  MAP_POSITIVE.forEach(addPos);
+  addQuakes(FB_QUAKES);
+
+  // D3 zoom + pan
+  _zoom=d3.zoom()
+    .scaleExtent([0.9,12])
+    .on('zoom',(event)=>{
+      _currentTransform=event.transform;
+      _gMain.attr('transform',event.transform);
+      // Scale labels inversely
+      gLabels.selectAll('text').each(function(){
+        const base=parseFloat(this.getAttribute('data-base-size')||12);
+        d3.select(this).attr('font-size',(base/event.transform.k).toFixed(1));
+      });
+    });
+  _svg.call(_zoom);
+
+  // Coords on mousemove
+  svgEl.addEventListener('mousemove',e=>{
+    const r=svgEl.getBoundingClientRect();
+    const[lon,lat]=screenLL(e.clientX-r.left,e.clientY-r.top);
+    if(isFinite(lon)&&isFinite(lat))
+      document.getElementById('mbCoords').textContent=
+        Math.abs(lat).toFixed(2)+'°'+(lat>=0?'N':'S')+' · '+Math.abs(lon).toFixed(2)+'°'+(lon>=0?'E':'W');
+  });
+}
+
+/* ══════ MARKERS ═══════════════════════════════ */
+const tip=()=>document.getElementById('mapTip');
+function showTip(html,x,y){
+  const t=tip();t.innerHTML=html;t.classList.add('show');
+  const div=document.getElementById('worldMap');
+  const px=Math.min(x+14,div.offsetWidth-240);
+  const py=Math.max(y-20,4);
+  t.style.left=px+'px';t.style.top=py+'px';
+}
+function hideTip(){tip().classList.remove('show');}
+
+// Rich detail panel — multi-source image chains per location
+// Each entry is an array of URLs tried in order until one loads
+const DETAIL_IMAGE_CHAINS={
+  // ── CONFLICT ZONES ──────────────────────────────────────────────────────
+  'Ukraine — Zaporizhzhia Front':[
+    'https://images.unsplash.com/photo-1655657897162-9e80d3e4a0b7?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Mariupol_2022_%284%29.jpg/640px-Mariupol_2022_%284%29.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Ukraine_war_2022_destruction.jpg/640px-Ukraine_war_2022_destruction.jpg',
+  ],
+  'Sudan — Khartoum':[
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Khartoum_Omdurman_Bridge.jpg/640px-Khartoum_Omdurman_Bridge.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Khartoum_North.jpg/640px-Khartoum_North.jpg',
+  ],
+  'Gaza Strip':[
+    'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Gaza_City_Skyline.jpg/640px-Gaza_City_Skyline.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Gaza_destruction.jpg/640px-Gaza_destruction.jpg',
+  ],
+  'Myanmar':[
+    'https://images.unsplash.com/photo-1558618047-3c5b3e8e9a45?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Shwedagon_Pagoda_at_dusk.jpg/640px-Shwedagon_Pagoda_at_dusk.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Shwedagon_Pagoda_Rangoon.jpg/640px-Shwedagon_Pagoda_Rangoon.jpg',
+  ],
+  'Yemen — Houthi Operations':[
+    'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Sana%27a_old_city.jpg/640px-Sana%27a_old_city.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Sanaa%2C_Yemen.jpg/640px-Sanaa%2C_Yemen.jpg',
+  ],
+  'DRC — Eastern Congo':[
+    'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Goma_lake_kivu.jpg/640px-Goma_lake_kivu.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Eastern_Congo.jpg/640px-Eastern_Congo.jpg',
+  ],
+  'Somalia':[
+    'https://images.unsplash.com/photo-1578895101408-1a36b834405b?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Mogadishu_cityscape.jpg/640px-Mogadishu_cityscape.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Mogadishu_harbor_2006.jpg/640px-Mogadishu_harbor_2006.jpg',
+  ],
+  'Nigeria — Sahel Belt':[
+    'https://images.unsplash.com/photo-1618172193763-c511deb635ca?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Abuja-city.jpg/640px-Abuja-city.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Sahel_landscape.jpg/640px-Sahel_landscape.jpg',
+  ],
+  'Afghanistan':[
+    'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Kabul_Afghanistan.jpg/640px-Kabul_Afghanistan.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Kabul_cityscape.jpg/640px-Kabul_cityscape.jpg',
+  ],
+  'Yemen/Saudi Border':[
+    'https://images.unsplash.com/photo-1553913861-c0fddf2619ee?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Sanaa%2C_Yemen.jpg/640px-Sanaa%2C_Yemen.jpg',
+  ],
+  // ── CYBER LOCATIONS ─────────────────────────────────────────────────────
+  'Washington DC':[
+    'https://images.unsplash.com/photo-1501466044931-62695aada8e9?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/US_Capitol_Building_at_night_Jan_2006.jpg/640px-US_Capitol_Building_at_night_Jan_2006.jpg',
+    'https://images.unsplash.com/photo-1617581629397-a72507c3de9e?w=640&q=80',
+  ],
+  'London':[
+    'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/London_Skyline_%28125508655%29.jpeg/640px-London_Skyline_%28125508655%29.jpeg',
+    'https://images.unsplash.com/photo-1529655683826-aba9b3e77383?w=640&q=80',
+  ],
+  'Tokyo':[
+    'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Skyscrapers_of_Shinjuku_2009_January.jpg/640px-Skyscrapers_of_Shinjuku_2009_January.jpg',
+    'https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=640&q=80',
+  ],
+  'Paris':[
+    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg/480px-Tour_Eiffel_Wikimedia_Commons.jpg',
+    'https://images.unsplash.com/photo-1431274172761-fcdab704f68d?w=640&q=80',
+  ],
+  'Moscow':[
+    'https://images.unsplash.com/photo-1513326738677-b964603b136d?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Red_Square_and_Kremlin.jpg/640px-Red_Square_and_Kremlin.jpg',
+    'https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=640&q=80',
+  ],
+  'Hong Kong':[
+    'https://images.unsplash.com/photo-1558444231-2f5b1a0fb6c1?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/HK_Skyline_Restitch_-_Dec_2007.jpg/640px-HK_Skyline_Restitch_-_Dec_2007.jpg',
+    'https://images.unsplash.com/photo-1536599018102-9f803c140fc1?w=640&q=80',
+  ],
+  'Singapore':[
+    'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Singapore_Skyline_as_seen_from_Gardens_by_the_Bay_-_20120716.jpg/640px-Singapore_Skyline_as_seen_from_Gardens_by_the_Bay_-_20120716.jpg',
+    'https://images.unsplash.com/photo-1506710507565-203b9f24669b?w=640&q=80',
+  ],
+  // ── POSITIVE EVENTS ─────────────────────────────────────────────────────
+  'Berlin':[
+    'https://images.unsplash.com/photo-1560969184-10fe8719e047?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Brandenburger_Tor_abends.jpg/640px-Brandenburger_Tor_abends.jpg',
+    'https://images.unsplash.com/photo-1587330979470-3595ac045ab0?w=640&q=80',
+  ],
+  'Nairobi':[
+    'https://images.unsplash.com/photo-1611348586804-61bf6c080437?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Nairobi_Skyline.jpg/640px-Nairobi_Skyline.jpg',
+    'https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?w=640&q=80',
+  ],
+  'Dakar':[
+    'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Dakar_from_above.jpg/640px-Dakar_from_above.jpg',
+    'https://images.unsplash.com/photo-1578946448400-e23c4d35e7c9?w=640&q=80',
+  ],
+  'New Delhi':[
+    'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=640&q=80',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/India_Gate_in_New_Delhi_03-2016.jpg/640px-India_Gate_in_New_Delhi_03-2016.jpg',
+    'https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=640&q=80',
+  ],
+};
+
+// Load the first working image from a chain, with a styled fallback
+async function loadImageChain(urls,imgEl,fallbackHtml,wrapEl){
+  for(const url of urls){
+    try{
+      await new Promise((res,rej)=>{
+        const t=new Image();
+        t.onload=res; t.onerror=rej;
+        setTimeout(rej,5000);
+        t.src=url;
+      });
+      // Image loaded — show it with fade-in
+      imgEl.src=url;
+      imgEl.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .4s;';
+      requestAnimationFrame(()=>{imgEl.style.opacity='1';});
+      return;
+    }catch(e){/* try next */}
+  }
+  // All URLs failed — show styled fallback
+  wrapEl.innerHTML=fallbackHtml;
+}
+
+// Quake location image lookup (keyed by lowercase location fragment)
+const QUAKE_IMAGES={
+  'tokyo':['https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=640&q=80','https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=640&q=80'],
+  'japan':['https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=640&q=80','https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=640&q=80'],
+  'greece':['https://images.unsplash.com/photo-1533105079780-92b9be482077?w=640&q=80','https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=640&q=80'],
+  'aegean':['https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=640&q=80'],
+  'turkey':['https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=640&q=80','https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?w=640&q=80'],
+  'kamchatka':['https://images.unsplash.com/photo-1569254491063-c38f9a87cfc9?w=640&q=80'],
+  'russia':['https://images.unsplash.com/photo-1513326738677-b964603b136d?w=640&q=80'],
+  'mexico':['https://images.unsplash.com/photo-1518638150340-f706e86654de?w=640&q=80','https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=640&q=80'],
+  'chiapas':['https://images.unsplash.com/photo-1518638150340-f706e86654de?w=640&q=80'],
+  'vanuatu':['https://images.unsplash.com/photo-1559494007-9f5847c49d94?w=640&q=80'],
+  'chile':['https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=640&q=80'],
+  'indonesia':['https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=640&q=80'],
+  'philippines':['https://images.unsplash.com/photo-1469796466635-455ede028aca?w=640&q=80'],
+  'alaska':['https://images.unsplash.com/photo-1531728627808-5f0a0f7dab41?w=640&q=80'],
+  'italy':['https://images.unsplash.com/photo-1529260830199-42c24126f198?w=640&q=80'],
+  'iran':['https://images.unsplash.com/photo-1584714268709-c3dd9c92b378?w=640&q=80'],
+  'peru':['https://images.unsplash.com/photo-1526392060635-9d6019884377?w=640&q=80'],
+  'new zealand':['https://images.unsplash.com/photo-1507699622108-4be3abd695ad?w=640&q=80'],
+  'pakistan':['https://images.unsplash.com/photo-1562001272-90b0685e4174?w=640&q=80'],
+};
+
+function getQuakeImages(loc){
+  const l=loc.toLowerCase();
+  for(const[k,v] of Object.entries(QUAKE_IMAGES))if(l.includes(k))return v;
+  // Generic seismic fallback
+  return['https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=640&q=80'];
+}
+const DETAIL_EMOJI={conflict:'🔥',quake:'🌍',cyber:'💻',positive:'✅'};
+const CAT_COLORS={conflict:'#e83535',quake:'#ff8c00',cyber:'#1a8cff',positive:'#00d46a'};
+
+function openDetail(data){
+  const det=document.getElementById('mapDetail');
+  const imgWrap=document.getElementById('mdImgWrap');
+  const color=CAT_COLORS[data.type]||'#1a8cff';
+  const emoji=DETAIL_EMOJI[data.type]||'📍';
+  const gradMap={conflict:'#1a0505,#2d0808',quake:'#1a0d00,#2a1500',cyber:'#020d1a,#04182e',positive:'#001a0a,#002914'};
+  const grad=gradMap[data.type]||gradMap.cyber;
+  const fallbackHtml=`<div style="width:100%;height:160px;background:linear-gradient(135deg,${grad});display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+    <span style="font-size:44px;filter:drop-shadow(0 0 12px ${color}88)">${emoji}</span>
+    <span style="font-size:8px;letter-spacing:.14em;color:${color};text-transform:uppercase;opacity:.7">${data.type.toUpperCase()} EVENT</span>
+  </div>`;
+
+  // Show loading skeleton while image loads
+  imgWrap.innerHTML=`
+    <div id="mdImgLoader" style="width:100%;height:160px;background:linear-gradient(135deg,${grad});display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+      <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);animation:shimmer 1.5s infinite;"></div>
+      <img id="mdImg" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;"/>
+      <span style="font-size:32px;opacity:.4;z-index:1">${emoji}</span>
+    </div>
+    <style>@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}</style>`;
+
+  const imgEl=imgWrap.querySelector('#mdImg');
+  const loaderEl=imgWrap.querySelector('#mdImgLoader');
+  const chains=DETAIL_IMAGE_CHAINS[data.name]||(data.type==='quake'?getQuakeImages(data.name):[]);
+  if(chains.length){
+    loadImageChain(chains,imgEl,fallbackHtml,imgWrap);
+  }else{
+    imgWrap.innerHTML=fallbackHtml;
+  }
+
+  document.getElementById('mdCatDot').style.background=color;
+  document.getElementById('mdCatTxt').textContent=data.cat||data.type.toUpperCase();
+  document.getElementById('mdCatTxt').style.color=color;
+  document.getElementById('mdName').textContent=data.name;
+  document.getElementById('mdDetail').textContent=data.detail;
+  const tags=[];
+  if(data.sev)tags.push({label:data.sev.toUpperCase(),color});
+  if(data.time)tags.push({label:data.time,color:'#384f63'});
+  if(data.depth)tags.push({label:'Depth '+data.depth,color:'#ff8c00'});
+  if(data.mag)tags.push({label:'M'+data.mag,color:'#ff8c00'});
+  document.getElementById('mdMeta').innerHTML=tags.map(t=>
+    `<span class="md-tag" style="color:${t.color};border-color:${t.color};background:${t.color}18">${t.label}</span>`
+  ).join('');
+  det.classList.add('open');
+}
+function closeDetail(){document.getElementById('mapDetail').classList.remove('open');}
+
+function addMarker(g,lon,lat,color,r,pulse,data){
+  if(!_projection)return;
+  const pt=_projection([lon,lat]);
+  if(!pt)return;
+  const[sx,sy]=pt;
+  const grp=mkEl('g',{transform:`translate(${sx},${sy})`},g);
+  grp.dataset.lon=lon;
+  grp.dataset.lat=lat;
+  grp.style.cursor='pointer';
+  if(pulse){
+    const c1=mkEl('circle',{r:r+8,fill:'none',stroke:color,'stroke-width':1.5,opacity:0.7},grp);
+    mkEl('animate',{attributeName:'r',from:r+2,to:r+20,dur:'2s',repeatCount:'indefinite'},c1);
+    mkEl('animate',{attributeName:'opacity',values:'0.7;0',dur:'2s',repeatCount:'indefinite'},c1);
+  }
+  // Outer ring
+  mkEl('circle',{r:r+3,fill:'none',stroke:color,'stroke-width':1,opacity:0.4},grp);
+  // Main dot
+  mkEl('circle',{r,fill:color,opacity:0.95,filter:'url(#glow)'},grp);
+  // Inner shine
+  mkEl('circle',{r:Math.max(1,r-3),fill:'#fff',opacity:0.25},grp);
+
+  grp.addEventListener('mouseenter',e=>{
+    const wr=document.getElementById('worldMap').getBoundingClientRect();
+    showTip(`<div class="tip-cat"><div class="tip-dot" style="background:${color}"></div>${data.cat||data.type.toUpperCase()}</div><div class="tip-name">${data.name}</div><div style="font-size:9px;color:#6a8fa8">👇 Click for details</div>`,
+      e.clientX-wr.left,e.clientY-wr.top);
+  });
+  grp.addEventListener('mouseleave',hideTip);
+  // Click → rich panel
+  grp.addEventListener('click',e=>{
+    e.stopPropagation();
+    hideTip();
+    openDetail(data);
+  });
+}
+
+function addConflict(z){
+  const c={active:'#e83535',escalate:'#ff8c00',monitor:'#ffc800'};
+  const r={active:8,escalate:6,monitor:5};
+  addMarker(_gMarkers.conflict,z.lon,z.lat,c[z.sev]||'#e83535',r[z.sev]||5,z.sev==='active',
+    {...z,type:'conflict',cat:'CONFLICT · '+z.sev.toUpperCase()});
+}
+function addCyber(z){
+  addMarker(_gMarkers.cyber,z.lon,z.lat,'#1a8cff',5,false,
+    {...z,type:'cyber',cat:'CYBER THREAT'});
+}
+function addPos(z){
+  addMarker(_gMarkers.positive,z.lon,z.lat,'#00d46a',5,false,
+    {...z,type:'positive',cat:'POSITIVE EVENT'});
+}
+function addQuakes(quakes){
+  if(_gMarkers.quake)_gMarkers.quake.innerHTML='';
+  document.getElementById('quakeCnt').textContent=quakes.length;
+  quakes.forEach(q=>{
+    const loc=q.loc.toLowerCase();let coords=null;
+    for(const[k,v] of Object.entries(QUAKE_COORDS))if(loc.includes(k)){coords=v;break;}
+    if(!coords)return;
+    const mag=parseFloat(q.mag);
+    const r=Math.max(4,Math.min(10,mag*1.8));
+    const color=mag>=6?'#e83535':mag>=5?'#ff8c00':'#ffc800';
+    addMarker(_gMarkers.quake,coords[1],coords[0],color,r,mag>=5.5,
+      {name:'M'+q.mag+' — '+q.loc,detail:'Depth: '+q.depth,type:'quake',cat:'SEISMIC EVENT',mag:q.mag,depth:q.depth,time:q.ago});
+  });
+}
+function toggleLayer(name,el){
+  layerState[name]=!layerState[name];
+  el.classList.toggle('on');
+  const g=document.getElementById('g-'+name);
+  if(g)g.style.display=layerState[name]?'':'none';
+}
+
+/* ══════ RENDER ═════════════════════════════════════ */
+function renderTicker(items){
+  const mk=a=>a.map(s=>`<span class="tk-item"><span class="tk-sep">▶</span>${s}</span>`).join('');
+  document.getElementById('tkInner').innerHTML=mk(items)+mk(items);
+}
+function catClass(c){
+  return({Conflict:'cc-conflict',Cyber:'cc-cyber',Natural:'cc-natural',Climate:'cc-climate',
+          Markets:'cc-markets',Unrest:'cc-unrest',Aviation:'cc-aviation',
+          Maritime:'cc-maritime',Intelligence:'cc-intelligence'})[c]||'cc-intelligence';
+}
+function sevClass(s){return({high:'sc-high',med:'sc-med'})[s]||'sc-info';}
+
+function renderFeed(items){
+  const src=(items&&items.length>0)?items:FB_NEWS;
+  const filtered=activeFilter==='all'?src:src.filter(x=>x.cat===activeFilter);
+  const slice=filtered.slice(0,visibleCount);
+  _feedStore=slice;
+  document.getElementById('feedCnt').textContent=filtered.length+' ITEMS';
+  document.getElementById('mFeed').textContent=src.length+' ITEMS';
+  const grid=document.getElementById('feedGrid');
+  if(!slice.length){
+    grid.innerHTML=`<div style="padding:14px 10px;font-size:9px;color:var(--text3);text-align:center;letter-spacing:.08em;line-height:2;">NO ${activeFilter.toUpperCase()} INTEL AT THIS TIME</div>`;
+    return;
+  }
+  grid.innerHTML=slice.map((c,i)=>`
+    <div class="intel-item" onclick="openModal(${i})">
+      <div class="ii-row1">
+        <span class="i-cat ${catClass(c.cat)}">${c.cat}</span>
+        <span class="i-sev ${sevClass(c.sev)}">${c.sev.toUpperCase()}</span>
+        ${i<3&&activeFilter==='all'?'<span class="i-new">NEW</span>':''}
+        <span class="i-time">${c.time}</span>
+      </div>
+      <div class="i-hl">${c.headline}</div>
+      <div class="i-src">${c.source}</div>
+    </div>`).join('');
+}
+
+function renderRisk(){
+  document.getElementById('riskWidget').innerHTML=RISK.map(r=>`
+    <div class="r-risk-row">
+      <div class="r-risk-top">
+        <div class="r-risk-name"><div class="r-risk-dot" style="background:${r.color}"></div>${r.name}</div>
+        <div class="r-risk-right">
+          <div class="r-risk-score" style="color:${r.color}">${r.score}</div>
+          <div class="r-risk-chg">${r.chg}</div>
+        </div>
+      </div>
+      <div class="r-risk-bar"><div class="r-risk-fill" style="width:${r.score}%;background:${r.color}"></div></div>
+      <div class="r-risk-detail">${r.detail}</div>
+    </div>`).join('');
+  document.getElementById('riskMini').innerHTML=RISK.slice(0,6).map(r=>`
+    <div class="rm-row">
+      <div class="rm-dot" style="background:${r.color}"></div>
+      <span class="rm-name">${r.name}</span>
+      <span class="rm-score" style="color:${r.color}">${r.score}</span>
+      <span class="rm-chg">${r.chg}</span>
+    </div>`).join('');
+}
+
+function renderQuakes(items){
+  addQuakes(items);
+  document.getElementById('quakeWidget').innerHTML=items.slice(0,5).map(q=>{
+    const mag=parseFloat(q.mag);
+    const c=mag>=6?'var(--accent)':mag>=5?'var(--orange)':'var(--yellow)';
+    return `<div class="r-quake" onclick="window.open('${q.url}','_blank')">
+      <div class="r-quake-mag" style="color:${c}">${q.mag}</div>
+      <div><div class="r-quake-loc">${q.loc}</div><div class="r-quake-meta">Depth ${q.depth} · ${q.ago}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderMarkets(items){
+  document.getElementById('mktWidget').innerHTML=items.map(m=>`
+    <div class="r-mkt">
+      <div><div class="r-mkt-sym">${m.sym}</div><div class="r-mkt-name">${m.name}</div></div>
+      <div><div class="r-mkt-price">${m.pfx||''}${m.price}</div><div class="r-mkt-chg ${m.dir==='up'?'up':'dn'}">${m.chg}</div></div>
+    </div>`).join('');
+}
+
+function renderPosture(){
+  const sm={NORM:'ps-norm',ELEV:'ps-elev',HIGH:'ps-high'};
+  document.getElementById('postureWidget').innerHTML=POSTURE.map(p=>`
+    <div class="posture-row">
+      <span class="pos-flag">${p.flag}</span>
+      <span class="pos-name">${p.name}</span>
+      <span class="pos-incidents" style="color:${p.color}">✕${p.incidents}</span>
+      <div class="pos-bar"><div class="pos-fill" style="width:${p.threat}%;background:${p.color}"></div></div>
+      <span class="pos-status ${sm[p.status]}">${p.status}</span>
+    </div>`).join('');
+  document.getElementById('postureTime').textContent=
+    new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false})+' UTC';
+  document.getElementById('predWidget').innerHTML=PREDICTIONS.map(p=>`
+    <div class="pred-row">
+      <div class="pred-q">${p.trend} ${p.q}</div>
+      <div class="pred-bar-wrap">
+        <div class="pred-track"><div class="pred-fill" style="width:${p.yes}%"></div></div>
+        <div class="pred-pct">${p.yes}%</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('predMini').innerHTML=PREDICTIONS.slice(0,3).map(p=>`
+    <div class="side-pred">
+      <div class="side-pred-q">${p.trend} ${p.q}</div>
+      <div class="side-pred-bar">
+        <div class="side-pred-track"><div class="side-pred-fill" style="width:${p.yes}%"></div></div>
+        <div class="side-pred-pct">${p.yes}%</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderConflicts(){
+  const sm={active:'ps-high',escalate:'ps-elev',monitor:'ps-norm'};
+  document.getElementById('cfCount').textContent=ACTIVE_CONFLICTS.filter(c=>c.status==='active').length+' ACTIVE';
+  document.getElementById('cfWidget').innerHTML=ACTIVE_CONFLICTS.map(c=>`
+    <div class="cf-row">
+      <div class="cf-top">
+        <span class="cf-flag">${c.flag}</span>
+        <span class="cf-name">${c.name}</span>
+        <span class="pos-status ${sm[c.status]}">${c.status.toUpperCase()}</span>
+      </div>
+      <div class="cf-detail">${c.detail}</div>
+      <div class="cf-cas"><div class="cf-cas-dot"></div>${c.cas}</div>
+    </div>`).join('');
+}
+
+function renderCyberMini(){
+  document.getElementById('cyberMini').innerHTML=CYBER_DATA.map(c=>`
+    <div class="cmi">
+      <div class="cmi-title">${c.icon} ${c.title}</div>
+      <div class="cmi-meta">${c.meta}</div>
+    </div>`).join('');
+}
+
+/* ══════ FILTER / SEARCH ════════════════════════════ */
+function setFilter(btn){
+  document.querySelectorAll('.fs-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  activeFilter=btn.dataset.cat;
+  visibleCount=40;
+  renderFeed(allNews);
+}
+function loadMore(){visibleCount+=20;renderFeed(allNews);toast('+20 intel items loaded');}
+function toggleSearch(){
+  const bar=document.getElementById('searchBar');
+  const shown=bar.style.display==='flex';
+  bar.style.display=shown?'none':'flex';
+  document.getElementById('srchToggle').classList.toggle('active',!shown);
+  if(!shown)document.getElementById('srchInput').focus();
+}
+function doSearch(){
+  const q=document.getElementById('srchInput').value.toLowerCase().trim();
+  if(!q){renderFeed(allNews);return;}
+  const src=allNews.length>0?allNews:FB_NEWS;
+  const res=src.filter(c=>c.headline.toLowerCase().includes(q)||c.summary.toLowerCase().includes(q)||c.cat.toLowerCase().includes(q)||c.source.toLowerCase().includes(q));
+  _feedStore=res;
+  document.getElementById('feedCnt').textContent=res.length+' RESULTS FOR "'+q.toUpperCase()+'"';
+  document.getElementById('feedGrid').innerHTML=res.length
+    ?res.map((c,i)=>`<div class="intel-item" onclick="openModal(${i})"><div class="ii-row1"><span class="i-cat ${catClass(c.cat)}">${c.cat}</span><span class="i-sev ${sevClass(c.sev)}">${c.sev.toUpperCase()}</span><span class="i-time">${c.time}</span></div><div class="i-hl">${c.headline}</div><div class="i-src">${c.source}</div></div>`).join('')
+    :`<div style="padding:14px;font-size:9px;color:var(--text3);text-align:center;letter-spacing:.08em;">NO RESULTS FOR "${q.toUpperCase()}"</div>`;
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('searchBar').style.display==='flex')doSearch();
+  if(e.key==='Escape'){closeModal();document.getElementById('searchBar').style.display='none';document.getElementById('srchToggle').classList.remove('active');}
+  if(e.key==='/'&&e.target.tagName!=='INPUT'){e.preventDefault();toggleSearch();}
+});
+
+/* ══════ MODAL ══════════════════════════════════════ */
+function openModal(i){openModalObj(_feedStore[i]);}
+function openModalObj(item){
+  if(!item)return;
+  document.getElementById('mCat').textContent=item.cat+' · '+item.sev.toUpperCase();
+  document.getElementById('mTitle').textContent=item.headline;
+  document.getElementById('mMeta').textContent=item.source+'  ·  '+item.time;
+  document.getElementById('mSummary').textContent=item.summary;
+  const lnk=document.getElementById('mLink');
+  lnk.style.display=(item.url&&item.url!=='#')?'inline-flex':'none';
+  if(item.url&&item.url!=='#')lnk.href=item.url;
+  document.getElementById('modal').classList.add('open');
+}
+function modalBg(e){if(e.target===document.getElementById('modal'))closeModal();}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+
+/* ══════ ALERTS ═════════════════════════════════════ */
+function toggleAlerts(){
+  document.getElementById('alertPanel').classList.toggle('open');
+  renderAlertList();
+}
+function saveAlert(){
+  const kw=document.getElementById('alertKw').value.trim();
+  if(!kw){toast('Enter a keyword first');return;}
+  alerts.push({id:Date.now(),kw,sev:document.getElementById('alertSev').value,created:new Date().toLocaleString()});
+  try{localStorage.setItem('csw_alerts',JSON.stringify(alerts));}catch(e){}
+  document.getElementById('alertKw').value='';
+  renderAlertList();
+  toast('Alert set for "'+kw+'"');
+}
+function deleteAlert(id){
+  alerts=alerts.filter(a=>a.id!==id);
+  try{localStorage.setItem('csw_alerts',JSON.stringify(alerts));}catch(e){}
+  renderAlertList();
+}
+function renderAlertList(){
+  const el=document.getElementById('alertList');
+  if(!alerts.length){el.innerHTML='<div style="font-size:8px;color:var(--text3);margin-top:8px;letter-spacing:.06em;">NO ACTIVE ALERTS</div>';return;}
+  el.innerHTML=`<div style="font-size:7px;letter-spacing:.16em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;margin-top:4px;">ACTIVE ALERTS</div>`+
+    alerts.map(a=>`<div class="ap-chip"><span>🔔 ${a.kw} · ${a.sev.toUpperCase()}</span><span class="ap-chip-del" onclick="deleteAlert(${a.id})">✕</span></div>`).join('');
+}
+function copyLink(){
+  try{navigator.clipboard.writeText(window.location.href);toast('Link copied to clipboard');}
+  catch(e){toast('Copy: '+window.location.href);}
+}
+
+/* ══════ UTILS ══════════════════════════════════════ */
+function toast(msg,dur=2800){
+  const el=document.createElement('div');el.className='toast';el.textContent=msg;
+  document.getElementById('toasts').appendChild(el);setTimeout(()=>el.remove(),dur);
+}
+function setTime(){
+  const n=new Date();
+  document.getElementById('tbTime').textContent=
+    n.toUTCString().replace(' GMT','').slice(0,-3).toUpperCase()+' UTC';
+}
+async function refreshMarkets(){
+  toast('Refreshing market data…');
+  const r=await fetch(API+'/api/markets').then(r=>r.json()).catch(()=>null);
+  if(r&&r.ok&&r.items){
+    renderMarkets(r.items.map(m=>({...m,pfx:m.pricePfx||''})));
+    const vix=r.items.find(x=>x.sym==='VIX');
+    if(vix)document.getElementById('mVIX').textContent=vix.price;
+    toast('Markets updated');
+  }else toast('Using cached market data');
+}
+
+/* ══════ FETCH ══════════════════════════════════════ */
+async function fetchAll(){
+  const[nR,qR,mR]=await Promise.all([
+    fetch(API+'/api/news').then(r=>r.json()).catch(()=>({ok:false})),
+    fetch(API+'/api/earthquakes').then(r=>r.json()).catch(()=>({ok:false})),
+    fetch(API+'/api/markets').then(r=>r.json()).catch(()=>({ok:false})),
+  ]);
+  if(nR.ok&&nR.items&&nR.items.length){
+    const liveCats=new Set(nR.items.map(x=>x.cat));
+    allNews=[...nR.items,...FB_NEWS.filter(x=>!liveCats.has(x.cat))];
+    renderFeed(allNews);
+    renderTicker(allNews.slice(0,30).map(n=>n.cat.toUpperCase()+' — '+n.headline));
+    const cCount=allNews.filter(n=>n.cat==='Conflict').length;
+    const cyCount=allNews.filter(n=>n.cat==='Cyber').length;
+    document.getElementById('mConflicts').textContent=cCount+' ▲';
+    document.getElementById('mCyber').textContent=cyCount+' ALERTS';
+    toast(nR.items.length+' live intel items loaded');
+  }else{
+    allNews=[...FB_NEWS];renderFeed(null);
+    renderTicker(FB_NEWS.map(n=>n.cat.toUpperCase()+' — '+n.headline));
+  }
+  if(qR.ok&&qR.items&&qR.items.length)renderQuakes(qR.items);else renderQuakes(FB_QUAKES);
+  if(mR.ok&&mR.items&&mR.items.length){
+    renderMarkets(mR.items.map(m=>({...m,pfx:m.pricePfx||''})));
+    const vix=mR.items.find(x=>x.sym==='VIX'||x.label==='VIX');
+    if(vix)document.getElementById('mVIX').textContent=vix.price;
+  }else renderMarkets(FB_MARKETS);
+}
+function startRefresh(){
+  setInterval(async()=>{
+    const r=await fetch(API+'/api/news').then(r=>r.json()).catch(()=>null);
+    if(r&&r.ok&&r.items&&r.items.length){
+      const liveCats=new Set(r.items.map(x=>x.cat));
+      allNews=[...r.items,...FB_NEWS.filter(x=>!liveCats.has(x.cat))];
+      renderFeed(allNews);
+      renderTicker(allNews.slice(0,30).map(n=>n.cat.toUpperCase()+' — '+n.headline));
+      // Check alerts
+      alerts.forEach(a=>{
+        const kw=a.kw.toLowerCase();
+        const match=r.items.find(x=>x.headline.toLowerCase().includes(kw)||x.summary.toLowerCase().includes(kw));
+        if(match)toast('🔔 ALERT: "'+a.kw+'" — '+match.headline.slice(0,55)+'…',5000);
+      });
+    }
+    const m=await fetch(API+'/api/markets').then(r=>r.json()).catch(()=>null);
+    if(m&&m.ok&&m.items)renderMarkets(m.items.map(x=>({...x,pfx:x.pricePfx||''})));
+  },5*60*1000);
+}
+
+/* ══════ INIT ═══════════════════════════════════════ */
+setTime();setInterval(setTime,1000);
+renderRisk();
+renderPosture();
+renderConflicts();
+renderCyberMini();
+renderMarkets(FB_MARKETS);
+renderQuakes(FB_QUAKES);
+renderFeed(null);
+renderAlertList();
+// Defer map init until layout is fully painted
+requestAnimationFrame(()=>requestAnimationFrame(async()=>{
+  await initMap();
+  fetchAll();
+  startRefresh();
+}));
+</script>
+</body>
+</html>
